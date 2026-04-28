@@ -7,7 +7,6 @@ exports.main = async (event) => {
 
   try {
     const { OPENID } = cloud.getWXContext()
-
     const db = cloud.database()
     const userCollection = db.collection('users')
 
@@ -31,6 +30,14 @@ exports.main = async (event) => {
       message: '登录成功'
     }
   } catch (err) {
+    // 如果集合不存在，返回更友好的错误提示
+    if (err.message.includes('DATABASE_COLLECTION_NOT_EXISTS') || err.message.includes('collection not exists')) {
+      return {
+        success: false,
+        error: '数据库初始化中，请稍后重试',
+        code: 'DB_NOT_READY'
+      }
+    }
     return {
       success: false,
       error: err.message
