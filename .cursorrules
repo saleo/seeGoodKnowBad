@@ -1,0 +1,14 @@
+# Cursor Rules for Praise Memo
+
+## Mandatory Workflow
+1. **CHECK SPECS FIRST**: Always look into `specs/*.spec.md` before making any code changes.
+2. **FOLLOW AGENTS.MD**: Strictly adhere to the coding standards and brand guidelines in `agents.md`.
+3. **LEANSPEC MODE**: If a feature is complex, ask the user for a LeanSpec in `specs/` before starting.
+
+## Brand Guidelines (v2.1)
+- **Morning Gold**: `#FFB300`
+- **Night Blue**: `#0D47A1`
+- **Component Style**: Use Pinia for state, SCSS for styling.
+
+## Verification
+- Run `npm run ci:enhance` after each task to ensure versioning and routing are synced.

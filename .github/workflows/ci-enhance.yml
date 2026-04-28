@@ -1,0 +1,49 @@
+name: CI Enhancement & Build
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  ci-enhance-and-build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run CI Enhancement
+        run: npm run ci:enhance
+      
+      - name: Lint code
+        run: npm run lint
+        continue-on-error: true
+      
+      - name: Build for WeChat Mini Program
+        run: npm run build:mp-weixin
+      
+      - name: Upload build artifacts
+        if: success()
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-output
+          path: dist/
+          retention-days: 7
+      
+      - name: Commit changes (if auto-generated files changed)
+        if: github.event_name == 'push'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add -A
+          git diff --cached --exit-code || (git commit -m "ci: auto-enhance CI configuration" && git push)

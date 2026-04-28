@@ -1,0 +1,574 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>见好知非 - Pre-MVP</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background-color: #f5f5f5;
+      color: #333;
+      line-height: 1.6;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    
+    h1 {
+      text-align: center;
+      color: #FFB300;
+      margin-bottom: 30px;
+      font-size: 2rem;
+    }
+    
+    .input-section {
+      background-color: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .content-input {
+      width: 100%;
+      min-height: 120px;
+      height: 150px;
+      padding: 15px;
+      border: 2px solid #dee2e6;
+      border-radius: 8px;
+      font-size: 16px;
+      line-height: 1.5;
+      resize: none;
+      font-family: inherit;
+      background-color: #f8f9fa;
+      color: #333;
+      box-sizing: border-box;
+      cursor: text;
+      -webkit-user-select: text;
+      user-select: text;
+      pointer-events: auto;
+    }
+    
+    .content-input::placeholder {
+      color: #999;
+    }
+    
+    .segmented-control {
+      display: flex;
+      margin: 20px 0;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #e0e0e0;
+    }
+    
+    .option {
+      flex: 1;
+      text-align: center;
+      padding: 12px 0;
+      background-color: #f5f5f5;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .option.active {
+      background-color: #FFB300;
+    }
+    
+    .option.active:nth-child(2) {
+      background-color: #FFD700;
+    }
+    
+    .option.active:nth-child(3) {
+      background-color: #283593;
+    }
+    
+    .option-text {
+      font-size: 14px;
+      color: #666;
+      transition: all 0.3s;
+    }
+    
+    .option-text.active {
+      color: #fff;
+      font-weight: bold;
+    }
+    
+    .save-button {
+      width: 100%;
+      height: 48px;
+      background-color: #FFB300;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    
+    .save-button:hover {
+      background-color: #FFA000;
+    }
+    
+    .timeline-section {
+      background-color: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .section-title {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 20px;
+      color: #333;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 60px 0;
+      color: #999;
+      font-size: 14px;
+    }
+    
+    .record-item {
+      display: flex;
+      margin-bottom: 20px;
+      border-left: 4px solid transparent;
+      padding-left: 15px;
+    }
+    
+    .color-bar {
+      width: 8px;
+      border-radius: 4px;
+      margin-right: 15px;
+      flex-shrink: 0;
+    }
+    
+    .color-bar.orange {
+      background-color: #FFB300;
+    }
+    
+    .color-bar.gold {
+      background-color: #FFD700;
+    }
+    
+    .color-bar.blue {
+      background-color: #283593;
+    }
+    
+    .record-content {
+      flex: 1;
+    }
+    
+    .record-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    
+    .record-type {
+      font-size: 18px;
+      margin-right: 10px;
+    }
+    
+    .record-time {
+      font-size: 12px;
+      color: #999;
+    }
+    
+    .record-text {
+      font-size: 14px;
+      line-height: 1.5;
+      color: #333;
+      word-break: break-word;
+    }
+    
+    .record-full-date {
+      font-size: 12px;
+      color: #999;
+      margin-top: 4px;
+      display: block;
+    }
+    
+    .bottom-actions {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+    }
+    
+    .action-button {
+      flex: 1;
+      height: 44px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin: 0 10px;
+    }
+    
+    .action-button.delete {
+      background-color: #f5f5f5;
+      color: #666;
+      border: 1px solid #e0e0e0;
+    }
+    
+    .action-button.delete:hover {
+      background-color: #e0e0e0;
+    }
+    
+    .action-button.export {
+      background-color: #283593;
+      color: #fff;
+    }
+    
+    .action-button.export:hover {
+      background-color: #1A237E;
+    }
+    
+    .toast {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      z-index: 1000;
+      display: none;
+    }
+    
+    .toast.show {
+      display: block;
+      animation: fadeInOut 2s ease-in-out;
+    }
+    
+    @keyframes fadeInOut {
+      0% { opacity: 0; }
+      20% { opacity: 1; }
+      80% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+    
+    /* 响应式设计 */
+    @media (max-width: 768px) {
+      .container {
+        padding: 15px;
+      }
+      
+      h1 {
+        font-size: 1.5rem;
+      }
+      
+      .input-section,
+      .timeline-section {
+        padding: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="container">
+      <h1>
+        <span style="color: #FFB300; text-shadow: 1px 1px 2px rgba(0,0,0,0.2); font-weight: bold;">见好</span>
+        <span style="color: #1A237E; text-shadow: 1px 1px 2px rgba(0,0,0,0.2); font-weight: bold;">知非</span>
+      </h1>
+      
+      <!-- 记录输入区域 -->
+      <div class="input-section">
+        <textarea
+          v-model="content"
+          placeholder="今天发生了什么..."
+          class="content-input"
+          @keydown.ctrl.enter="saveRecord"
+        ></textarea>
+        
+        <!-- 分段选择器 -->
+        <div class="segmented-control">
+          <div
+            v-for="option in options"
+            :key="option.value"
+            :class="[
+              'option',
+              { active: selectedType === option.value }
+            ]"
+            @click="selectType(option.value)"
+          >
+            <span :class="['option-text', { active: selectedType === option.value }]">
+              {{ option.label }}
+            </span>
+          </div>
+        </div>
+        
+        <button 
+          class="save-button" 
+          @click="saveRecord"
+        >
+          保存记录
+        </button>
+      </div>
+      
+      <!-- 时间轴视图 -->
+      <div class="timeline-section">
+        <div class="section-title">记录历史</div>
+        <div v-if="records.length === 0" class="empty-state">
+          <span>还没有记录，开始记录吧</span>
+        </div>
+        <div 
+          v-for="record in records" 
+          :key="record.id"
+          class="record-item"
+        >
+          <div 
+            :class="['color-bar', getColorClass(record)]"
+          ></div>
+          <div class="record-content">
+            <div class="record-header">
+              <span :class="['record-type', getColorClass(record)]">
+                {{ getTypeIcon(record) }}
+              </span>
+              <span class="record-time">{{ formatTime(record.time) }}</span>
+            </div>
+            <span class="record-text">{{ record.content }}</span>
+            <span class="record-full-date">{{ formatFullDate(record.fullDate) }}</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 底部操作 -->
+      <div class="bottom-actions">
+        <button 
+          class="action-button delete" 
+          @click="confirmClear"
+        >
+          清除记录
+        </button>
+        <button 
+          class="action-button export" 
+          @click="exportData"
+        >
+          导出数据
+        </button>
+      </div>
+    </div>
+    
+    <!-- 提示框 -->
+    <div class="toast" :class="{ show: showToast }">
+      {{ toastMessage }}
+    </div>
+  </div>
+  
+  <script>
+    const { createApp, ref, onMounted } = Vue
+    
+    // 存储工具
+    const storage = {
+      set(key, value) {
+        try {
+          localStorage.setItem(key, JSON.stringify(value))
+        } catch (error) {
+          console.error('存储失败:', error)
+        }
+      },
+      get(key) {
+        try {
+          const value = localStorage.getItem(key)
+          return value ? JSON.parse(value) : null
+        } catch (error) {
+          console.error('读取失败:', error)
+          return null
+        }
+      },
+      clear() {
+        try {
+          localStorage.clear()
+        } catch (error) {
+          console.error('清空失败:', error)
+        }
+      }
+    }
+    
+    createApp({
+      setup() {
+        const content = ref('')
+        const selectedType = ref('other') // 默认见人好
+        const records = ref([])
+        const showToast = ref(false)
+        const toastMessage = ref('')
+        
+        const options = [
+          { value: 'other', label: '🙌 见人好' },
+          { value: 'self', label: '🌟 见我好' },
+          { value: 'non', label: '🌊 知非' }
+        ]
+        
+        // 显示提示
+        const showToastMessage = (message) => {
+          toastMessage.value = message
+          showToast.value = true
+          setTimeout(() => {
+            showToast.value = false
+          }, 2000)
+        }
+        
+        // 选择类型
+        const selectType = (value) => {
+          selectedType.value = value
+        }
+        
+        // 保存记录
+        const saveRecord = () => {
+          if (!content.value.trim()) {
+            showToastMessage('请输入内容')
+            return
+          }
+          
+          const newRecord = {
+            id: Date.now(),
+            type: selectedType.value === 'non' ? 'non' : 'good',
+            subtype: selectedType.value === 'non' ? null : selectedType.value,
+            content: content.value.trim(),
+            time: Date.now(),
+            fullDate: new Date().toISOString() // 完整日期时间
+          }
+          
+          records.value.unshift(newRecord) // 添加到开头
+          storage.set('records', records.value)
+          
+          content.value = '' // 清空输入
+          
+          showToastMessage('保存成功')
+        }
+        
+        // 确认清除
+        const confirmClear = () => {
+          if (confirm('确定要清除所有记录吗？')) {
+            records.value = []
+            storage.set('records', [])
+            showToastMessage('已清除')
+          }
+        }
+        
+        // 导出数据
+        const exportData = () => {
+          const dataStr = JSON.stringify(records.value, null, 2)
+          const dataBlob = new Blob([dataStr], { type: 'application/json' })
+          const url = URL.createObjectURL(dataBlob)
+          const link = document.createElement('a')
+          link.href = url
+          link.download = `praise-memo-${Date.now()}.json`
+          link.click()
+          URL.revokeObjectURL(url)
+          showToastMessage('导出成功')
+        }
+        
+        // 获取类型图标
+        const getTypeIcon = (record) => {
+          const type = record.type
+          const subtype = record.subtype
+          
+          // 新格式 (SEE_OTHERS_GOOD / SEE_SELF_GOOD / REFLECT_NON)
+          if (type === 'SEE_OTHERS_GOOD') return '🙌'
+          if (type === 'SEE_SELF_GOOD') return '🌟'
+          if (type === 'REFLECT_NON') return '🧠'
+          
+          // 旧格式 (good/non)
+          if (type === 'good') {
+            return subtype === 'other' ? '🙌' : '🌟'
+          }
+          if (type === 'non') return '🧠'
+          
+          return '📝'
+        }
+        
+        // 获取颜色类名
+        const getColorClass = (record) => {
+          const type = record.type
+          const subtype = record.subtype
+          
+          if (type === 'SEE_OTHERS_GOOD' || (type === 'good' && subtype === 'other')) return 'orange'
+          if (type === 'SEE_SELF_GOOD' || (type === 'good' && subtype === 'self')) return 'gold'
+          return 'blue'
+        }
+        
+        // 格式化时间
+        const formatTime = (timestamp) => {
+          if (!timestamp) return ''
+          
+          // 确保 timestamp 是可解析的格式（兼容安卓真机）
+          const timestampNum = Number(timestamp)
+          if (isNaN(timestampNum)) return timestamp
+          
+          const now = Date.now()
+          const diff = now - timestampNum
+          const minutes = Math.floor(diff / 60000)
+          const hours = Math.floor(diff / 3600000)
+          const days = Math.floor(diff / 86400000)
+          
+          if (minutes < 1) return '刚刚'
+          if (minutes < 60) return `${minutes}分钟前`
+          if (hours < 24) return `${hours}小时前`
+          if (days === 1) return '昨天'
+          if (days === 2) return '前天'
+          if (days < 7) return `${days}天前`
+          if (days < 14) return '一周前'
+          if (days < 30) return '一个月前'
+          
+          const date = new Date(timestampNum)
+          return `${date.getMonth() + 1}月${date.getDate()}日`
+        }
+        
+        // 格式化完整日期时间
+        const formatFullDate = (fullDate) => {
+          if (!fullDate) return ''
+          const date = new Date(fullDate)
+          return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+        }
+        
+        // 加载记录
+        onMounted(() => {
+          const storedRecords = storage.get('records')
+          if (storedRecords) {
+            records.value = storedRecords
+          }
+        })
+        
+        return {
+          content,
+          selectedType,
+          records,
+          options,
+          showToast,
+          toastMessage,
+          selectType,
+          saveRecord,
+          confirmClear,
+          exportData,
+          getTypeIcon,
+          getColorClass,
+          formatTime,
+          formatFullDate,
+          showToastMessage
+        }
+      }
+    }).mount('#app')
+  </script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "praise-memo-share",
+  "version": "0.1.18",
+  "description": "Praise Memo Share project configuration placeholder.",
+  "author": "Unknown",
+  "dependencies": {},
+  "projectname": "praise-memo-share",
+  "setting": {
+    "es6": true,
+    "minify": true,
+    "postcss": true
+  }
+}

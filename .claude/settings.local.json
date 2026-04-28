@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/euse/.agents/skills/gstack/**)",
+      "Bash(git -C ~/.claude/skills/gstack remote -v)"
+    ]
+  }
+}

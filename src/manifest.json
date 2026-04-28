@@ -1,0 +1,14 @@
+{
+  "name": "praise-memo-share",
+  "version": "0.0.1",
+  "description": "Manifest for Praise Memo Share frontend module.",
+  "author": "Unknown",
+  "permissions": [],
+  "versionName": "0.1.18",
+  "versionCode": "22",
+  "mp-weixin": {
+    "appid": "wxba340bcd9707423f",
+    "envId": "jhzf-d3go85m0635364285",  
+    "cloudfunctionRoot": "cloudfunctions/"
+  }
+}

@@ -1,0 +1,213 @@
+那更适合自动化，因为 **Open Code + UniApp** 本身就天然适合 agent 驱动。
+
+你甚至可以把 **Open Code 当 CI 编排器**。
+
+## 最小自动化架构：
+
+```text
+Open Code (Agent)
+↓
+调用 package.json scripts
+↓
+UniApp build
+↓
+微信 mini program CI upload
+↓
+自动发版
+```
+
+---
+
+## 1. 先把 HBuilderX“退出主流程”
+
+不要：
+
+```text
+打开 HBuilderX
+点运行
+点发行
+点上传
+```
+
+改成：
+
+```powershell
+npm run dev:mp-weixin
+npm run build:mp-weixin
+```
+
+UniApp本身支持：
+
+```json
+{
+ "scripts": {
+   "dev":"uni -p mp-weixin",
+   "build":"uni build -p mp-weixin"
+ }
+}
+```
+
+以后 Open Code 调这个。
+
+---
+
+## 2. 让 Open Code 帮你做任务编排
+
+例如 prompt：
+
+```text
+构建微信小程序
+如果成功：
+调用 miniprogram-ci 上传
+如果失败：
+自动修复 lint 错误
+```
+
+这本质是 agent workflow。
+
+---
+
+## 3. package.json 做成控制中心
+
+```json
+{
+ "scripts": {
+
+   "lint":"eslint .",
+
+   "build":"uni build -p mp-weixin",
+
+   "upload":"node scripts/upload.js",
+
+   "release":"npm run lint && npm run build && npm run upload"
+ }
+}
+```
+
+然后：
+
+```powershell
+npm run release
+```
+
+Open Code 执行：
+
+```text
+run release
+```
+
+结束。
+
+---
+
+## 4. upload.js
+
+微信 CI：
+
+```javascript
+const ci=require('miniprogram-ci')
+
+ci.upload({
+ project:new ci.Project({
+   appid:'xxx',
+   privateKeyPath:'./private.key',
+   projectPath:'./dist/build/mp-weixin'
+ }),
+
+ version:'1.0.1',
+ desc:'auto release'
+})
+```
+
+这是核心。
+
+---
+
+## 5. 真正适合 Open Code 的：
+
+让 agent 自动：
+
+```text
+git commit
+↓
+检查代码
+
+↓
+构建
+
+↓
+上传微信
+
+↓
+生成 changelog
+
+↓
+打 tag
+```
+
+这比传统 CI 还适合你这种单人开发。
+
+---
+
+## 6. 如果我是你，会继续做这个（非常关键）
+
+加：
+
+```text
+/openrules.md
+```
+
+写：
+
+```text
+如果修改代码：
+
+先 lint
+再 build
+
+如果 build 成功：
+
+自动运行
+npm run upload
+
+如果失败：
+
+自动修复
+```
+
+Open Code 会按规则执行。
+
+这才是 agentic engineering。
+
+---
+
+## 7. 甚至可以自动化“杂活”
+
+让 Open Code 自动：
+
+* 更新 manifest.json 版本号
+
+* 自动生成 pages.json 路由
+
+* 自动补全 uni.request API 封装
+
+* 自动同步微信 project.config.json
+
+这些比发版更费时间。
+
+---
+
+### 最终你应该变成：
+
+```text
+我写代码
+
+Open Code:
+自动测试
+自动构建
+自动上传
+自动发版
+```
+
+人不碰发布流程。
+
