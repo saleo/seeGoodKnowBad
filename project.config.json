@@ -5,6 +5,7 @@
   "author": "Unknown",
   "dependencies": {},
   "projectname": "praise-memo-share",
+  "cloudfunctionRoot": "src/cloudfunctions/",
   "setting": {
     "es6": true,
     "minify": true,

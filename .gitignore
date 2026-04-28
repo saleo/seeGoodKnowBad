@@ -39,3 +39,4 @@ unpackage/
 
 # Playwright
 .playwright-mcp/
+.aider*

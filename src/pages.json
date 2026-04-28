@@ -5,6 +5,12 @@
       "style": {
         "navigationBarTitleText": ""
       }
+    },
+    {
+      "path": "pages/record/record",
+      "style": {
+        "navigationBarTitleText": "见好知非"
+      }
     }
   ],
   "globalStyle": {
