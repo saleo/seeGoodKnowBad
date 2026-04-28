@@ -12,7 +12,7 @@ const project = new ci.Project({
   try {
     const result = await ci.preview({
       project,
-      version: '0.1.18',
+      version: '0.1.19',
       desc: 'Test preview',
       setting: {
         es6: true,
