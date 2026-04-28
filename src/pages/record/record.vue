@@ -1,22 +1,27 @@
 <template>
   <view class="container">
+    <!-- 顶部栏 -->
     <view class="top-bar">
-      <view class="user-info" v-if="userStore.isLoggedIn">
-        <image class="avatar" :src="userStore.userInfo.avatarUrl" mode="aspectFill" />
-        <text class="nickname">{{ userStore.userNickname }}</text>
+      <view class="brand-mini">
+        <view class="logo-heart-mini">
+          <view class="heart-left-mini"></view>
+          <view class="heart-right-mini"></view>
+        </view>
+        <text class="brand-text">见好知非</text>
       </view>
-      <view v-else class="placeholder"></view>
 
-      <view class="actions">
-        <button v-if="userStore.isLoggedIn" class="icon-btn sync" :class="userStore.syncStatus" @tap="handleSync" :disabled="userStore.syncStatus === 'syncing'">
-          ☁️
-        </button>
-        <button v-if="userStore.isLoggedIn" class="icon-btn" @tap="handleLogout">
-          🚪
-        </button>
-        <button v-else class="icon-btn login" @tap="goToLogin">
-          👤
-        </button>
+      <view class="user-section">
+        <view v-if="userStore.isLoggedIn" class="user-info">
+          <image
+            v-if="userStore.userAvatar"
+            class="avatar"
+            :src="userStore.userAvatar"
+            mode="aspectFill"
+          />
+          <view v-else class="avatar-placeholder">👤</view>
+          <text class="nickname">{{ userStore.userNickname }}</text>
+        </view>
+        <button v-else class="login-mini-btn" @tap="goToLogin">登录</button>
       </view>
     </view>
 
@@ -24,41 +29,53 @@
       <textarea
         :value="content"
         @input="handleInput"
-        :placeholder="getPlaceholderForType(currentType)"
+        :placeholder="currentPlaceholder"
         class="content-input"
         placeholder-class="placeholder"
       ></textarea>
 
-      <view class="tab-container">
+      <view class="segmented-control">
         <view
-          v-for="(option, index) in options"
+          v-for="option in options"
           :key="option.value"
-          :class="['tab-item', { active: currentIndex === index }]"
-          @tap="switchInput(index)"
+          :class="['option', { active: selectedType === option.value }]"
+          @tap="selectType(option.value)"
         >
-          <text :class="['tab-text', { active: currentIndex === index }]">
+          <text :class="['option-text', { active: selectedType === option.value }]">
             {{ option.label }}
           </text>
         </view>
       </view>
 
-      <button class="save-button" @tap="saveWithType">保存记录</button>
+      <button class="save-button" @tap="saveRecord">
+        <text class="save-icon">✨</text>
+        <text>保存记录</text>
+      </button>
     </view>
 
     <view class="timeline-section">
-      <view class="section-title">成长流</view>
-      <view v-if="records.length === 0" class="empty-state">
-        <text>见好成光，知非而进</text>
+      <view class="section-header">
+        <text class="section-title">成长流</text>
+        <text class="section-subtitle">见好成光，知非而进</text>
       </view>
+
+      <view v-if="records.length === 0" class="empty-state">
+        <view class="empty-icon">🌱</view>
+        <text class="empty-text">开始记录你的第一份觉察吧</text>
+      </view>
+
       <view v-for="record in records" :key="record.id" class="record-item">
         <view :class="['color-bar', getColorClass(record)]"></view>
         <view class="record-content">
           <view class="record-header">
-            <text :class="['record-type-icon', getColorClass(record)]">
-              {{ getTypeIcon(record) }}
-            </text>
+            <view class="record-type">
+              <text class="type-icon">{{ getTypeIcon(record.type) }}</text>
+              <text :class="['type-text', getColorClass(record)]">
+                {{ getTypeLabel(record) }}
+              </text>
+            </view>
             <view class="header-right">
-              <text class="record-time">{{ formatTime(record.time) }}</text>
+              <text class="record-time">{{ formatTime(record.time || record.createdAt) }}</text>
               <button class="share-icon-btn" open-type="share" :data-record="JSON.stringify(record)">
                 <text class="share-icon">↗️</text>
               </button>
@@ -70,9 +87,23 @@
     </view>
 
     <view class="bottom-actions">
-      <button class="action-button delete" @tap="confirmClear">清空</button>
-      <button class="action-button export" @tap="exportData">导出</button>
-      <button class="action-button invite" open-type="share" data-type="invite">邀请</button>
+      <button class="action-button delete" @tap="confirmClear">
+        <text class="action-icon">🗑️</text>
+        <text class="action-text">清空</text>
+      </button>
+      <button class="action-button export" @tap="exportData">
+        <text class="action-icon">📋</text>
+        <text class="action-text">导出</text>
+      </button>
+      <button class="action-button invite" open-type="share" data-type="invite">
+        <text class="action-icon">💌</text>
+        <text class="action-text">邀请</text>
+      </button>
+    </view>
+
+    <!-- 同步状态提示 -->
+    <view v-if="syncMessage" class="sync-toast">
+      <text>{{ syncMessage }}</text>
     </view>
   </view>
 </template>
@@ -85,8 +116,10 @@ import { useUserStore } from '@/store/user'
 
 const recordStore = useRecordStore()
 const userStore = useUserStore()
+
 const content = ref('')
-const currentIndex = ref(0)
+const selectedType = ref('SEE_OTHERS_GOOD')
+const syncMessage = ref('')
 
 const records = computed(() => recordStore.records)
 
@@ -96,94 +129,66 @@ const options = [
   { value: 'REFLECT_NON', label: '🧠 知非' }
 ]
 
-const currentType = computed(() => {
-  return options[currentIndex.value]?.value || options[0].value
-})
-
-const placeholderConfig = {
-  SEE_OTHERS_GOOD: [
-    { text: '今天，谁的光照亮了你？', weight: 1 },
-    { text: '看见他人的善意与温暖', weight: 1 },
-    { text: '看见光，成为光', weight: 3 }
-  ],
-  SEE_SELF_GOOD: [
-    { text: '记录自己的进步与成长', weight: 1 },
-    { text: '你的进步与成长，值得被看见', weight: 1 },
-    { text: '看见光，成为光', weight: 3 }
-  ],
-  REFLECT_NON: [
-    { text: '觉察，是改变的开始。', weight: 1 },
-    { text: '真诚面对，是成长的起点。', weight: 1 },
-    { text: '如实记录，轻装前行。', weight: 1 },
-    { text: '觉察，而非审判', weight: 1 }
-  ]
+const placeholders = {
+  SEE_OTHERS_GOOD: '发现他人的善意与美好...',
+  SEE_SELF_GOOD: '记录自己的进步与成长...',
+  REFLECT_NON: '觉察不足，轻装前行...'
 }
 
-const getWeightedRandomPlaceholder = (type) => {
-  const placeholders = placeholderConfig[type] || placeholderConfig.REFLECT_NON
-  const weightedArray = []
-
-  placeholders.forEach(item => {
-    for (let i = 0; i < item.weight; i++) {
-      weightedArray.push(item.text)
-    }
-  })
-
-  const randomIndex = Math.floor(Math.random() * weightedArray.length)
-  return weightedArray[randomIndex]
-}
-
-const getPlaceholderForType = (type) => {
-  return getWeightedRandomPlaceholder(type)
-}
-
-const switchInput = (index) => {
-  currentIndex.value = index
-}
+const currentPlaceholder = computed(() => placeholders[selectedType.value])
 
 const handleInput = (e) => {
   content.value = e.detail.value
 }
 
-const saveWithType = () => {
+const selectType = (value) => {
+  selectedType.value = value
+}
+
+const showSyncMessage = (msg) => {
+  syncMessage.value = msg
+  setTimeout(() => { syncMessage.value = '' }, 2000)
+}
+
+const saveRecord = async () => {
   const text = content.value.trim()
   if (!text) {
     uni.showToast({ title: '请输入内容', icon: 'none' })
     return
   }
 
-  recordStore.addRecord({
-    type: currentType.value,
-    content: text
-  })
+  uni.showLoading({ title: '保存中...' })
 
-  content.value = ''
-  uni.showToast({ title: '已记录', icon: 'success' })
-}
+  try {
+    // 先保存到本地
+    recordStore.addRecord({
+      type: selectedType.value,
+      content: text
+    })
 
-const goToLogin = () => {
-  uni.navigateTo({ url: '/pages/login/login' })
-}
+    // 如果已登录，同步到云端
+    if (userStore.isLoggedIn) {
+      const syncRes = await userStore.syncRecords([{
+        type: selectedType.value,
+        content: text
+      }])
 
-const handleLogout = () => {
-  uni.showModal({
-    title: '确认退出',
-    content: '退出后本地记录仍会保留',
-    success: (res) => {
-      if (res.confirm) {
-        userStore.logout()
-        uni.showToast({ title: '已退出', icon: 'success' })
+      if (syncRes.success) {
+        showSyncMessage('已同步到云端')
+      } else {
+        showSyncMessage('本地已保存，云端同步失败')
       }
+    } else {
+      showSyncMessage('已保存到本地')
     }
-  })
-}
 
-const handleSync = async () => {
-  const res = await userStore.syncRecords(recordStore.records)
-  if (res.success) {
-    uni.showToast({ title: '同步成功', icon: 'success' })
-  } else {
-    uni.showToast({ title: res.error, icon: 'none' })
+    content.value = ''
+    uni.showToast({ title: '已记录', icon: 'success' })
+  } catch (err) {
+    console.error('保存失败:', err)
+    uni.showToast({ title: '保存失败', icon: 'none' })
+  } finally {
+    uni.hideLoading()
   }
 }
 
@@ -207,66 +212,83 @@ const exportData = () => {
   })
 }
 
+const goToLogin = () => {
+  uni.navigateTo({ url: '/pages/index/index' })
+}
+
 const getColorClass = (record) => {
-  const type = record.type
-  if (type === 'SEE_OTHERS_GOOD' || type === 'other') return 'orange'
-  if (type === 'SEE_SELF_GOOD' || type === 'self') return 'gold'
-  if (type === 'REFLECT_NON' || type === 'non') return 'blue'
+  const type = record.type || record.recordType
+  if (type === 'SEE_OTHERS_GOOD') return 'orange'
+  if (type === 'SEE_SELF_GOOD') return 'gold'
   return 'blue'
 }
 
-const getTypeIcon = (record) => {
-  const type = record.type
-  const subtype = record.subtype
-
-  if (type === 'SEE_OTHERS_GOOD') return '🙌'
-  if (type === 'SEE_SELF_GOOD') return '🌟'
-  if (type === 'REFLECT_NON') return '🧠'
-
-  if (type === 'good') {
-    return subtype === 'other' ? '🙌' : '🌟'
+const getTypeIcon = (type) => {
+  const map = {
+    'SEE_OTHERS_GOOD': '🙌',
+    'SEE_SELF_GOOD': '🌟',
+    'REFLECT_NON': '🧠'
   }
-  if (type === 'non') return '🧠'
+  return map[type] || '📝'
+}
 
-  return '📝'
+const getTypeLabel = (record) => {
+  const type = record.type || record.recordType
+  const map = {
+    'SEE_OTHERS_GOOD': '见人好',
+    'SEE_SELF_GOOD': '见我好',
+    'REFLECT_NON': '知非'
+  }
+  return map[type] || '记录'
 }
 
 const formatTime = (timestamp) => {
   if (!timestamp) return ''
+  const date = new Date(timestamp)
+  return `${date.getMonth() + 1}月${date.getDate()}日 ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`
+}
 
-  const timestampNum = Number(timestamp)
-  if (isNaN(timestampNum)) return timestamp
+// 加载云端记录
+const loadCloudRecords = async () => {
+  if (!userStore.isLoggedIn) return
 
-  const now = new Date()
-  const date = new Date(timestampNum)
-  const diffMs = now - date
-  const diffMins = Math.floor(diffMs / 60000)
-  const diffHours = Math.floor(diffMs / 3600000)
-  const diffDays = Math.floor(diffMs / 86400000)
+  try {
+    const res = await userStore.getCloudRecords()
+    if (res.success && res.records) {
+      // 合并云端记录到本地（去重）
+      const cloudRecords = res.records.map(r => ({
+        id: r._id || Date.now(),
+        type: r.type,
+        content: r.content,
+        time: new Date(r.createdAt).getTime(),
+        createdAt: new Date(r.createdAt).getTime()
+      }))
 
-  if (diffMins < 1) return '刚刚'
-  if (diffMins < 60) return `${diffMins}分钟前`
-  if (diffHours < 24) return `${diffHours}小时前`
-  if (diffDays === 1) return '昨天'
-  if (diffDays === 2) return '前天'
-  if (diffDays < 7) return `${diffDays}天前`
-  if (diffDays < 14) return '一周前'
-  if (diffDays < 21) return '两周前'
-  if (diffDays < 30) return '三周前'
-  if (diffDays < 60) return '一个月前'
-  if (diffDays < 365) return `${Math.floor(diffDays / 30)}个月前`
-  if (diffDays < 730) return '一年前'
-  return `${Math.floor(diffDays / 365)}年前`
+      // 简单合并：以本地记录为基础，补充云端记录
+      const existingIds = new Set(recordStore.records.map(r => r.id))
+      const newRecords = cloudRecords.filter(r => !existingIds.has(r.id))
+
+      if (newRecords.length > 0) {
+        recordStore.records = [...newRecords, ...recordStore.records]
+        recordStore.saveToStorage()
+        showSyncMessage(`已同步 ${newRecords.length} 条云端记录`)
+      }
+    }
+  } catch (err) {
+    console.error('加载云端记录失败:', err)
+  }
 }
 
 onMounted(() => {
+  recordStore.loadRecords()
   userStore.loadFromStorage()
+  loadCloudRecords()
 })
 
 onShareAppMessage((res) => {
   if (res.from === 'button' && res.target.dataset.record) {
     const record = JSON.parse(res.target.dataset.record)
-    return { title: `【${getTypeIcon(record)}】${record.content}` }
+    return { title: `【${getTypeIcon(record.type || record.recordType)}】${record.content}` }
   }
   return { title: '见好知非' }
 })
@@ -286,62 +308,98 @@ $text-dark: #212121;
   background: $bg-gray;
 }
 
+/* 顶部栏 */
 .top-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20rpx;
+  margin-bottom: 30rpx;
+}
+
+.brand-mini {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.logo-heart-mini {
+  width: 48rpx;
+  height: 44rpx;
+  position: relative;
+  display: flex;
+}
+
+.heart-left-mini,
+.heart-right-mini {
+  width: 24rpx;
+  height: 40rpx;
+  position: relative;
+  overflow: hidden;
+}
+
+.heart-left-mini {
+  background: linear-gradient(180deg, #FFB300 0%, #FF8F00 100%);
+  border-radius: 24rpx 24rpx 0 10rpx;
+  transform: rotate(-8deg);
+  transform-origin: right bottom;
+}
+
+.heart-right-mini {
+  background: linear-gradient(180deg, #2196F3 0%, #0D47A1 100%);
+  border-radius: 24rpx 24rpx 10rpx 0;
+  transform: rotate(8deg);
+  transform-origin: left bottom;
+}
+
+.brand-text {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: $text-dark;
+}
+
+.user-section {
+  display: flex;
+  align-items: center;
 }
 
 .user-info {
   display: flex;
   align-items: center;
-  gap: 16rpx;
+  gap: 12rpx;
 }
 
 .avatar {
-  width: 64rpx;
-  height: 64rpx;
+  width: 56rpx;
+  height: 56rpx;
   border-radius: 50%;
-  background: #ddd;
 }
 
-.nickname {
-  font-size: 28rpx;
-  color: $text-dark;
-  font-weight: 500;
-}
-
-.actions {
-  display: flex;
-  align-items: center;
-  gap: 16rpx;
-}
-
-.icon-btn {
-  width: 64rpx;
-  height: 64rpx;
+.avatar-placeholder {
+  width: 56rpx;
+  height: 56rpx;
   border-radius: 50%;
-  background: #fff;
+  background: #f0f0f0;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 32rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.08);
-
-  &.sync.syncing {
-    opacity: 0.6;
-  }
-
-  &.sync.synced {
-    background: #e6f7e6;
-  }
-
-  &.login {
-    background: $morning-gold;
-  }
+  font-size: 28rpx;
 }
 
+.nickname {
+  font-size: 26rpx;
+  color: #666;
+}
+
+.login-mini-btn {
+  font-size: 24rpx;
+  color: $night-blue;
+  background: transparent;
+  padding: 8rpx 20rpx;
+  border: 1rpx solid $night-blue;
+  border-radius: 24rpx;
+}
+
+/* 输入区域 */
 .input-section {
   background: #fff;
   border-radius: 32rpx;
@@ -355,45 +413,30 @@ $text-dark: #212121;
   height: 200rpx;
   font-size: 30rpx;
   color: $text-dark;
-  margin-bottom: 20rpx;
 }
 
-.tab-container {
+.placeholder {
+  color: #bbb;
+}
+
+.segmented-control {
   display: flex;
   margin: 20rpx 0;
-  border-bottom: 2rpx solid #e0e0e0;
+  background: #f8f8f8;
+  border-radius: 16rpx;
+  padding: 4rpx;
 }
 
-.tab-item {
+.option {
   flex: 1;
   text-align: center;
   padding: 16rpx 0;
-  position: relative;
-  transition: all 0.3s ease;
-  &.active {
-    color: $night-blue;
-  }
-  &.active::after {
-    content: '';
-    position: absolute;
-    bottom: -2rpx;
-    left: 20%;
-    width: 60%;
-    height: 4rpx;
-    background: $night-blue;
-    border-radius: 2rpx;
-  }
+  border-radius: 12rpx;
+  &.active { background: #fff; box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.1); }
 }
 
-.tab-text {
-  font-size: 26rpx;
-  color: #666;
-  font-weight: 500;
-  &.active {
-    color: $night-blue;
-    font-weight: bold;
-  }
-}
+.option-text { font-size: 26rpx; color: #666; }
+.option.active .option-text { color: $text-dark; font-weight: bold; }
 
 .save-button {
   width: 100%;
@@ -405,7 +448,50 @@ $text-dark: #212121;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: 20rpx;
+  gap: 12rpx;
+
+  .save-icon {
+    font-size: 32rpx;
+  }
+}
+
+/* 成长流 */
+.timeline-section {
+  margin-bottom: 30rpx;
+}
+
+.section-header {
+  display: flex;
+  align-items: baseline;
+  gap: 16rpx;
+  margin-bottom: 20rpx;
+  padding: 0 10rpx;
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: $text-dark;
+}
+
+.section-subtitle {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60rpx 0;
+}
+
+.empty-icon {
+  font-size: 64rpx;
+  margin-bottom: 16rpx;
+}
+
+.empty-text {
+  font-size: 28rpx;
+  color: #999;
 }
 
 .record-item {
@@ -414,20 +500,22 @@ $text-dark: #212121;
   border-radius: 24rpx;
   padding: 24rpx;
   display: flex;
+  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.04);
 }
 
 .color-bar {
   width: 8rpx;
   margin-right: 20rpx;
   border-radius: 4rpx;
+  flex-shrink: 0;
   &.orange { background: $morning-gold; }
   &.gold { background: #F1C40F; }
   &.blue { background: $night-blue; }
 }
 
-.record-type-icon { font-size: 32rpx; }
-.record-time { font-size: 22rpx; color: #999; }
-.record-text { font-size: 28rpx; color: $text-dark; line-height: 1.5; }
+.record-content {
+  flex: 1;
+}
 
 .record-header {
   display: flex;
@@ -436,40 +524,58 @@ $text-dark: #212121;
   margin-bottom: 12rpx;
 }
 
+.record-type {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.type-icon {
+  font-size: 28rpx;
+}
+
+.type-text {
+  font-size: 24rpx;
+  font-weight: bold;
+  &.orange { color: $morning-gold; }
+  &.gold { color: #F1C40F; }
+  &.blue { color: $night-blue; }
+}
+
 .header-right {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
   gap: 12rpx;
 }
 
 .record-time {
   font-size: 22rpx;
   color: #999;
-  white-space: nowrap;
 }
 
 .share-icon-btn {
+  background: transparent;
   padding: 0;
   margin: 0;
-  width: 44rpx;
-  height: 44rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
   line-height: 1;
 }
 
 .share-icon {
-  font-size: 24rpx;
-  line-height: 1;
+  font-size: 28rpx;
 }
 
+.record-text {
+  font-size: 28rpx;
+  color: $text-dark;
+  line-height: 1.5;
+}
+
+/* 底部操作 */
 .bottom-actions {
   display: flex;
   gap: 16rpx;
   margin-top: 40rpx;
+  margin-bottom: 40rpx;
 }
 
 .action-button {
@@ -477,7 +583,39 @@ $text-dark: #212121;
   height: 72rpx;
   font-size: 24rpx;
   border-radius: 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  background: #fff;
+  color: #666;
+  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.06);
+
+  .action-icon {
+    font-size: 28rpx;
+  }
+
+  .action-text {
+    font-size: 24rpx;
+  }
+
   &.delete { color: #e74c3c; }
+  &.export { color: $night-blue; }
+  &.invite { color: $morning-gold; }
+}
+
+/* 同步提示 */
+.sync-toast {
+  position: fixed;
+  bottom: 120rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  padding: 16rpx 32rpx;
+  border-radius: 32rpx;
+  font-size: 26rpx;
+  z-index: 100;
 }
 
 button::after { border: none; }

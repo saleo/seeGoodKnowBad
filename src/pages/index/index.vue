@@ -43,15 +43,23 @@
     <view class="footer">
       <text class="tip">登录即表示同意《用户协议》和《隐私政策》</text>
     </view>
+
+    <ProfileSetupModal
+      :visible="showProfileModal"
+      @close="showProfileModal = false"
+      @submit="handleProfileSubmit"
+    />
   </view>
 </template>
 
 <script setup>
 import { ref } from 'vue'
 import { useUserStore } from '@/store/user'
+import ProfileSetupModal from '@/components/ProfileSetupModal.vue'
 
 const userStore = useUserStore()
 const showInfo = ref(false)
+const showProfileModal = ref(false)
 
 const toggleInfo = () => {
   showInfo.value = !showInfo.value
@@ -63,9 +71,37 @@ const handleWeChatLogin = async () => {
   uni.hideLoading()
 
   if (res.success) {
-    uni.navigateTo({ url: '/pages/record/record' })
+    showProfileModal.value = true
   } else {
     uni.showToast({ title: res.error || '登录失败', icon: 'none' })
+  }
+}
+
+const handleProfileSubmit = async (profile) => {
+  console.log('收到资料:', profile)
+
+  uni.showLoading({ title: '保存中...' })
+  const res = await userStore.updateProfile(profile)
+  uni.hideLoading()
+
+  console.log('保存结果:', res)
+
+  if (res.success) {
+    showProfileModal.value = false
+    console.log('准备跳转到记录页面')
+
+    uni.navigateTo({
+      url: '/pages/record/record',
+      success: () => {
+        console.log('跳转成功')
+      },
+      fail: (err) => {
+        console.error('跳转失败:', err)
+        uni.showToast({ title: '页面跳转失败', icon: 'none' })
+      }
+    })
+  } else {
+    uni.showToast({ title: res.error || '保存失败', icon: 'none' })
   }
 }
 </script>

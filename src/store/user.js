@@ -11,6 +11,7 @@ export const useUserStore = defineStore('user', {
 
   getters: {
     userNickname: (state) => state.userInfo?.nickName || '未登录',
+    userAvatar: (state) => state.userInfo?.avatarUrl || '',
     canSync: (state) => state.isLoggedIn && state.token
   },
 
@@ -42,6 +43,39 @@ export const useUserStore = defineStore('user', {
       } catch (err) {
         console.error('登录失败:', err)
         return { success: false, error: err.message || '登录失败' }
+      }
+    },
+
+    async updateProfile(profile) {
+      try {
+        this.userInfo = {
+          ...this.userInfo,
+          nickName: profile.nickName,
+          avatarUrl: profile.avatarUrl
+        }
+
+        storage.set('user_info', this.userInfo)
+
+        const { result } = await uni.cloud.callFunction({
+          name: 'login',
+          data: {
+            action: 'updateProfile',
+            openid: this.token,
+            profile: {
+              nickName: profile.nickName,
+              avatarUrl: profile.avatarUrl
+            }
+          }
+        })
+
+        if (result.success) {
+          return { success: true }
+        } else {
+          return { success: false, error: result.error }
+        }
+      } catch (err) {
+        console.error('更新资料失败:', err)
+        return { success: false, error: err.message || '更新失败' }
       }
     },
 

@@ -3,12 +3,27 @@ const cloud = require('wx-server-sdk')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
 exports.main = async (event) => {
-  void event
+  const { action, profile } = event
 
   try {
     const { OPENID } = cloud.getWXContext()
     const db = cloud.database()
     const userCollection = db.collection('users')
+
+    if (action === 'updateProfile') {
+      await userCollection.where({ _openid: OPENID }).update({
+        data: {
+          nickName: profile.nickName,
+          avatarUrl: profile.avatarUrl,
+          updatedAt: db.serverDate()
+        }
+      })
+
+      return {
+        success: true,
+        message: '资料更新成功'
+      }
+    }
 
     let user = await userCollection.where({ _openid: OPENID }).get()
 
@@ -30,7 +45,6 @@ exports.main = async (event) => {
       message: '登录成功'
     }
   } catch (err) {
-    // 如果集合不存在，返回更友好的错误提示
     if (err.message.includes('DATABASE_COLLECTION_NOT_EXISTS') || err.message.includes('collection not exists')) {
       return {
         success: false,
