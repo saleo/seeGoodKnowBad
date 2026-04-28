@@ -17,7 +17,7 @@ const project = new ci.Project({
   ignores: ['node_modules/**/*', '.git/**/*'],
 });
 
-const cloudfunctionRoot = './cloudfunctions';
+const cloudfunctionRoot = './src/cloudfunctions';
 
 async function deployCloudFunctions() {
   if (!CLOUD_ENV) {

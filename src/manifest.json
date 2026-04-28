@@ -9,6 +9,6 @@
   "mp-weixin": {
     "appid": "wxba340bcd9707423f",
     "envId": "jhzf-d3go85m0635364285",  
-    "cloudfunctionRoot": "cloudfunctions/"
+    "cloudfunctionRoot": "src/cloudfunctions/"
   }
 }
