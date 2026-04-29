@@ -3,6 +3,11 @@ const { execSync, spawn } = require('child_process')
 const path = require('path')
 const fs = require('fs')
 
+// 设置代理（避免网络连接超时）
+process.env.HTTP_PROXY = process.env.HTTP_PROXY || 'http://127.0.0.1:7892'
+process.env.HTTPS_PROXY = process.env.HTTPS_PROXY || 'http://127.0.0.1:7892'
+console.log(`使用代理: ${process.env.HTTPS_PROXY}`)
+
 // 构建产物路径（uni-app CLI 构建输出目录）
 const projectPath = path.resolve(__dirname, '../dist/build/mp-weixin')
 
