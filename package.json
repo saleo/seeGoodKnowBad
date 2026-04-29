@@ -61,7 +61,7 @@
     "@dcloudio/webpack-uni-pages-loader": "^2.0.2-5000720260410001",
     "@vue/cli-service": "^5.0.9",
     "miniprogram-ci": "2.1.31",
-    "pinia": "^3.0.4",
+    "pinia": "^2.1.7",
     "uni": "^0.0.6",
     "vue": "^3.2.0"
   },
