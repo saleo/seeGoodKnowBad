@@ -1,10 +1,11 @@
 {
   "name": "praise-memo",
-  "version": "0.1.19",
+  "version": "0.1.27",
   "private": true,
   "scripts": {
     "dev:mp-weixin": "uni -p mp-weixin",
     "build:mp-weixin": "uni build -p mp-weixin",
+    "validate:pages": "node scripts/validate-pages.js",
     "dev:web": "npx uni-launch web",
     "dev:app-android": "npx uni-launch app-android",
     "dev:app-ios": "npx uni-launch app-ios",
@@ -48,7 +49,8 @@
     "upload:wxdevtools": "node scripts/upload-wxdevtools.js",
     "upload:system": "node scripts/upload-system-ci.js",
     "deploy:cloudfunctions": "node ci-deploy-cloudfunctions.js",
-    "release": "npm run lint && npm run build && npm run deploy:cloudfunctions && npm run upload:system"
+    "release": "npm run lint && npm run build && npm run deploy:cloudfunctions && npm run upload:system",
+    "release:app": "npm run lint && npm run build && npm run upload:system"
   },
   "dependencies": {
     "@dcloudio/uni-app": "3.0.0-alpha-5000820260420001",

@@ -56,6 +56,59 @@ function updateManifestVersion() {
   return true;
 }
 
+function validatePages() {
+  const pagesJsonPath = path.join(SRC, 'pages.json');
+  
+  if (!fs.existsSync(pagesJsonPath)) {
+    console.error('❌ pages.json 不存在');
+    return false;
+  }
+
+  const pagesJson = readJSON(pagesJsonPath);
+  let success = true;
+
+  if (!pagesJson.pages || !Array.isArray(pagesJson.pages)) {
+    console.error('❌ pages.json 中缺少 pages 数组');
+    return false;
+  }
+
+  console.log(`📋 验证 ${pagesJson.pages.length} 个注册页面...`);
+
+  for (const pageConfig of pagesJson.pages) {
+    const pagePath = pageConfig.path || pageConfig;
+    const vueFilePath = path.join(SRC, `${pagePath}.vue`);
+    const pageDirPath = path.join(SRC, pagePath);
+
+    const fileExists = fs.existsSync(vueFilePath);
+    const dirExists = fs.existsSync(pageDirPath);
+
+    if (!fileExists && !dirExists) {
+      console.error(`❌ 页面 ${pagePath} 不存在!`);
+      console.error(`   期望路径: ${vueFilePath}`);
+      success = false;
+    }
+  }
+
+  if (pagesJson.subPackages && Array.isArray(pagesJson.subPackages)) {
+    for (const subPackage of pagesJson.subPackages) {
+      if (subPackage.pages && Array.isArray(subPackage.pages)) {
+        for (const pagePath of subPackage.pages) {
+          const vueFilePath = path.join(SRC, `${subPackage.root}/${pagePath}.vue`);
+          if (!fs.existsSync(vueFilePath)) {
+            console.error(`❌ 分包页面 ${subPackage.root}/${pagePath} 不存在!`);
+            success = false;
+          }
+        }
+      }
+    }
+  }
+
+  if (success) {
+    console.log('✅ 所有页面验证通过');
+  }
+  return success;
+}
+
 function generatePages() {
   const pagesDir = path.join(SRC, 'pages');
   const pagesJsonPath = path.join(SRC, 'pages.json');
@@ -67,7 +120,10 @@ function generatePages() {
     pagesJson = readJSON(pagesJsonPath);
   }
 
-  const pages = [];
+  const existingPaths = new Set(pagesJson.pages.map(p => p.path || p));
+  const pages = [...pagesJson.pages];
+  const addedPages = [];
+
   function scanPages(dir, prefix) {
     const entries = fs.readdirSync(dir, { withFileTypes: true });
     for (const entry of entries) {
@@ -79,7 +135,10 @@ function generatePages() {
                          fs.existsSync(path.join(fullPath, 'index.js'));
         if (hasIndex) {
           const pagePath = `${relativePath}/index`;
-          pages.push({ path: pagePath, style: { navigationBarTitleText: '' } });
+          if (!existingPaths.has(pagePath)) {
+            pages.push({ path: pagePath, style: { navigationBarTitleText: '' } });
+            addedPages.push(pagePath);
+          }
         } else {
           scanPages(fullPath, relativePath);
         }
@@ -88,13 +147,16 @@ function generatePages() {
   }
 
   scanPages(pagesDir, 'pages');
-  if (pages.length > 0) {
-    pagesJson.pages = pages;
+  
+  if (addedPages.length > 0) {
     fs.writeFileSync(pagesJsonPath, JSON.stringify(pagesJson, null, 2) + '\n');
-    console.log(`✅ 路由: 共 ${pages.length} 个页面`);
+    console.log(`✅ 路由: 新增 ${addedPages.length} 个页面`);
+    addedPages.forEach(p => console.log(`   + ${p}`));
     return true;
+  } else {
+    console.log('✅ 路由: 无需更新');
+    return false;
   }
-  return false;
 }
 
 function setupApiWrapper() {
@@ -185,9 +247,14 @@ function syncCIPreview() {
 async function main() {
   console.log('\n🚀 CI 增强流程启动...\n');
   
-  // 首先递增版本号
+  console.log('📋 验证页面路由配置...');
+  if (!validatePages()) {
+    console.error('\n❌ 页面验证失败，请检查 pages.json 配置');
+    process.exit(1);
+  }
+  
   try {
-    console.log('📋 递增版本号...');
+    console.log('\n📋 递增版本号...');
     const newVersion = incrementVersion();
     if (newVersion) {
       console.log(`✅ 版本号已更新: ${newVersion}`);
@@ -207,17 +274,19 @@ async function main() {
   ];
 
   let success = 0;
+  let hasError = false;
   for (const task of tasks) {
     try {
       console.log(`\n📋 ${task.name}...`);
       if (task.fn()) success++;
     } catch (error) {
       console.error(`❌ ${task.name} 失败: ${error.message}`);
+      hasError = true;
     }
   }
 
   console.log(`\n✨ 完成! (${success}/${tasks.length} 项成功)\n`);
-  return success === tasks.length ? 0 : 1;
+  return hasError ? 1 : 0;
 }
 
 if (require.main === module) main().then((code) => process.exit(code));
