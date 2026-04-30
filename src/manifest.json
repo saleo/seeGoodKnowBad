@@ -4,8 +4,8 @@
   "description": "Manifest for Praise Memo Share frontend module.",
   "author": "Unknown",
   "permissions": [],
-  "versionName": "0.1.27",
-  "versionCode": "31",
+  "versionName": "0.1.28",
+  "versionCode": "32",
   "mp-weixin": {
     "appid": "wxba340bcd9707423f",
     "envId": "jhzf-d3go85m0635364285",
