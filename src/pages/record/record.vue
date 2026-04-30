@@ -160,14 +160,14 @@ const saveRecord = async () => {
   uni.showLoading({ title: '保存中...' })
 
   try {
-    // 先保存到本地
     recordStore.addRecord({
       type: selectedType.value,
       content: text
     })
 
-    // 如果已登录，同步到云端
-    if (userStore.isLoggedIn) {
+    const loginCheck = await userStore.ensureLogin()
+    
+    if (loginCheck.success) {
       const syncRes = await userStore.syncRecords([{
         type: selectedType.value,
         content: text
@@ -177,9 +177,22 @@ const saveRecord = async () => {
         showSyncMessage('已同步到云端')
       } else {
         showSyncMessage('本地已保存，云端同步失败')
+        console.error('云端同步失败:', syncRes.error)
+        uni.showModal({
+          title: '同步失败',
+          content: `云端同步失败: ${syncRes.error || '未知错误'}`,
+          showCancel: false,
+          confirmText: '知道了'
+        })
       }
     } else {
-      showSyncMessage('已保存到本地')
+      showSyncMessage('已保存到本地（未登录）')
+      uni.showModal({
+        title: '提示',
+        content: '当前未登录，记录仅保存到本地。登录后可同步到云端，数据永不丢失。',
+        showCancel: false,
+        confirmText: '知道了'
+      })
     }
 
     content.value = ''

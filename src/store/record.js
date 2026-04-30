@@ -25,6 +25,13 @@ export const useRecordStore = defineStore('record', {
     
     saveToStorage() {
       storage.set('records', this.records)
+    },
+    
+    loadRecords() {
+      const stored = storage.get('records')
+      if (stored) {
+        this.records = stored
+      }
     }
   }
 })

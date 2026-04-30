@@ -94,7 +94,28 @@ export const useUserStore = defineStore('user', {
         this.token = token
         this.userInfo = info
         this.isLoggedIn = true
+        console.log('用户状态已恢复: isLoggedIn=' + this.isLoggedIn)
+      } else {
+        console.log('用户状态未恢复: token=' + !!token + ', info=' + !!info)
       }
+    },
+    
+    async ensureLogin() {
+      if (this.isLoggedIn) {
+        return { success: true, message: '已登录' }
+      }
+      
+      const token = storage.get('user_token', '')
+      const info = storage.get('user_info', null)
+      
+      if (token && info) {
+        this.token = token
+        this.userInfo = info
+        this.isLoggedIn = true
+        return { success: true, message: '已从本地恢复登录状态' }
+      }
+      
+      return { success: false, error: '未登录，请先登录' }
     },
 
     async syncRecords(records) {
