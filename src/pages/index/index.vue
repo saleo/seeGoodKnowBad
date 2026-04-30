@@ -66,6 +66,18 @@ const toggleInfo = () => {
 }
 
 const handleWeChatLogin = async () => {
+  // 若已登录，直接跳转，不再弹出完善资料框
+  if (userStore.isLoggedIn) {
+    uni.navigateTo({
+      url: '/pages/record/record',
+      fail: (err) => {
+        console.error('跳转失败:', err)
+        uni.showToast({ title: '页面跳转失败', icon: 'none' })
+      }
+    })
+    return
+  }
+
   uni.showLoading({ title: '登录中...' })
   const res = await userStore.loginWithWeChat()
   uni.hideLoading()
