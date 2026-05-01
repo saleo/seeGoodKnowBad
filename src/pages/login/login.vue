@@ -3,7 +3,7 @@
     <view class="brand-section">
       <view class="logo">🌟</view>
       <view class="app-name">见好知非</view>
-      <view class="slogan">记录美好，觉察成长</view>
+      <view class="slogan">见光成光，知非而进</view>
     </view>
 
     <view class="form-section">

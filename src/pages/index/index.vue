@@ -15,7 +15,7 @@
         <text class="text-zhi">知</text>
         <text class="text-fei">非</text>
       </view>
-      <view class="slogan">记录美好，觉察成长</view>
+      <view class="slogan">见光成光，知非而进</view>
     </view>
 
     <view class="action-section">
