@@ -43,6 +43,18 @@ jobs:
           name: build-output
           path: dist/
           retention-days: 7
+
+      - name: Setup WeChat private key
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          WECHAT_PRIVATE_KEY: ${{ secrets.WECHAT_PRIVATE_KEY }}
+        run: echo "$WECHAT_PRIVATE_KEY" > ./private.wxba340bcd9707423f.key
+
+      - name: Upload Mini Program to WeChat
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          UPLOAD_PROJECT_PATH: dist/build/mp-weixin
+        run: npm run upload
       
       - name: Commit changes (if auto-generated files changed)
         if: github.event_name == 'push'

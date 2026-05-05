@@ -40,3 +40,5 @@ unpackage/
 # Playwright
 .playwright-mcp/
 .aider*
+
+codebuddy-plugin/
